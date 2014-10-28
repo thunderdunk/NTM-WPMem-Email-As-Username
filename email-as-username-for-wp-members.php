@@ -1,10 +1,10 @@
 <?php
 /*
-Plugin Name: Email as Username for WP-Members
+Plugin Name: Email as Username for WP-Members - Heptagon Edit
 Description: Requires WP-Members to be in use. Uses members' emails as their usernames. Removes the need to create a username (if wp-members is in use). Changes or removes appropriate items from forms, and adds the email address as the username. If WP-Members is no longer in use, there are plenty of plugins that offer this capability for WP's native registration and login functions
 Author: New Tribes Mission (Stephen Narwold)
 Plugin URI: https://github.com/newtribesmission/NTM-WPMem-Email-As-Username
-Version: 1.2.2
+Version: 1.2.2.1
 
     Copyright (C) 2014  New Tribes Mission
 
@@ -29,14 +29,8 @@ Version: 1.2.2
 //If you need some customization, change these variables.
 //You'll need to re-change them if you update the plugin, but it's better than nothing
 
-//Replace "Username" with the following on the login form
-$ntmeau_login_field_name = 'Email (Use your mission email address if applicable)';
+/* ********* These are now defined inside the functions where they're used */
 
-//Where to send them after they delete their own user (registration page would be best)
-$ntmeau_redirect_on_delete = '/missionary-services';
-
-//Where to send them if they try to access the admin pages as subscribers
-$ntmeau_redirect_on_admin_denial = '/missionary-services/profile';
 
 /*****************************/
 /****       Login         ****/
@@ -59,8 +53,13 @@ function ntmeau_email_login_authenticate( $user, $username, $password ) {
 remove_filter( 'authenticate', 'wp_authenticate_username_password', 20, 3 );
 add_filter( 'authenticate', 'ntmeau_email_login_authenticate', 20, 3 );
 
+
 //This is just to remind them to use their email address to log in
 function ntmeau_wpmem_login_username_to_email($inputs) {
+
+	//Replace "Username" with the following on the login form
+	$ntmeau_login_field_name = 'Email';
+
 	//change the name of the username field to "Email" on the login form
 	if ($inputs[0]['tag'] == 'log') {
 		//$ntmeau_login_field_name is defined at the top of this file
@@ -154,6 +153,10 @@ add_filter( 'wpmem_pre_validate_form', 'ntmeau_fill_user_with_email' );
 /*****************************/
 //Allow subscribers to delete their own users (this would be the only way to change their email address)
 function ntmeau_remove_logged_in_user() { 
+
+	//Where to send them after they delete their own user (registration page would be best)
+	$ntmeau_redirect_on_delete = '/';
+
 	//First, make sure user is logged in and only a subscriber (protects admins from deleting themselves in testing)
 	if (is_user_logged_in() && !current_user_can('edit_posts') && $_POST['ntmeau-delete-account'] == 'DELETE MY ACCOUNT') {
 		require_once(ABSPATH.'wp-admin/includes/user.php' );
@@ -161,12 +164,16 @@ function ntmeau_remove_logged_in_user() {
 		wp_delete_user( $current_user->ID );
 		//$ntmeau_redirect_on_delete is defined at the top of this file
 		wp_redirect($ntmeau_redirect_on_delete,302);
-		//Once deleted, send them to the Missionary Services homepage
+		//Once deleted, send them to the page defined on line 36
 	}
 }
 add_action('init', 'ntmeau_remove_logged_in_user');
 
 function ntmeau_block_admin_pages_for_subscribers() {
+
+	//Where to send them if they try to access the admin pages as subscribers
+	$ntmeau_redirect_on_admin_denial = '/profile';
+
 	//Don't allow subscriber-level users (non-admins) to access the admin area or admin bar
 	if (!current_user_can('edit_posts')) {
 		//For anyone who can't edit posts:
